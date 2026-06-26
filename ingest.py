@@ -2,10 +2,8 @@ import argparse
 import shutil
 from pathlib import Path
 
-from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from config import (
@@ -16,6 +14,7 @@ from config import (
     DATA_DIR,
     EMBEDDING_MODEL,
 )
+from local_embeddings import ChromaDefaultEmbeddings
 
 
 def load_documents(data_dir: Path):
@@ -39,8 +38,6 @@ def load_documents(data_dir: Path):
 
 
 def ingest(reset: bool = False) -> None:
-    load_dotenv()
-
     if not DATA_DIR.exists():
         raise FileNotFoundError(f"Data directory not found: {DATA_DIR.resolve()}")
 
@@ -58,7 +55,7 @@ def ingest(reset: bool = False) -> None:
     )
     chunks = splitter.split_documents(documents)
 
-    embeddings = GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL)
+    embeddings = ChromaDefaultEmbeddings()
     Chroma.from_documents(
         documents=chunks,
         embedding=embeddings,
@@ -68,6 +65,7 @@ def ingest(reset: bool = False) -> None:
 
     print(f"Loaded documents/pages: {len(documents)}")
     print(f"Created and stored chunks: {len(chunks)}")
+    print(f"Embedding model: {EMBEDDING_MODEL}")
     print(f"Chroma collection: {COLLECTION_NAME}")
     print(f"Persisted at: {CHROMA_DIR.resolve()}")
 

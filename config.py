@@ -4,7 +4,7 @@ DATA_DIR = Path("data")
 CHROMA_DIR = Path("chroma_db")
 COLLECTION_NAME = "procurement_policy_docs"
 
-EMBEDDING_MODEL = "models/text-embedding-004"
+EMBEDDING_MODEL = "chroma-default"
 CHAT_MODEL = "gemini-2.0-flash"
 
 CHUNK_SIZE = 1000

@@ -1,20 +1,21 @@
 import argparse
+import os
 from typing import Iterable, List
 
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from config import (
     CHAT_MODEL,
     CHROMA_DIR,
     COLLECTION_NAME,
-    EMBEDDING_MODEL,
     REFUSAL_MESSAGE,
     RETRIEVAL_K,
 )
+from local_embeddings import ChromaDefaultEmbeddings
 
 
 SYSTEM_PROMPT = f"""You are a precise assistant for procurement and policy documents.
@@ -26,7 +27,7 @@ Do not guess or infer beyond what is written."""
 
 
 def load_vector_store() -> Chroma:
-    embeddings = GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL)
+    embeddings = ChromaDefaultEmbeddings()
     return Chroma(
         collection_name=COLLECTION_NAME,
         embedding_function=embeddings,
@@ -54,6 +55,13 @@ def answer_question(question: str):
     chunks = retrieve(question)
     context = format_context(chunks)
 
+    if not os.getenv("GOOGLE_API_KEY"):
+        return (
+            "No GOOGLE_API_KEY found, so generation was skipped. Retrieved context is available below.",
+            chunks,
+            context,
+        )
+
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", SYSTEM_PROMPT),
@@ -66,8 +74,13 @@ def answer_question(question: str):
     return response.content, chunks, context
 
 
-def print_result(question: str) -> None:
-    answer, chunks, _ = answer_question(question)
+def print_result(question: str, retrieve_only: bool = False) -> None:
+    if retrieve_only:
+        chunks = retrieve(question)
+        answer = "Generation skipped because --retrieve-only was used."
+    else:
+        answer, chunks, _ = answer_question(question)
+
     print(answer)
     print("\nRetrieved chunks:")
     for index, chunk in enumerate(chunks, start=1):
@@ -94,6 +107,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Ask questions over the local RAG corpus.")
     parser.add_argument("--query", help="Question to answer.")
     parser.add_argument(
+        "--retrieve-only",
+        action="store_true",
+        help="Only retrieve ChromaDB chunks; do not call Gemini.",
+    )
+    parser.add_argument(
         "--interactive",
         action="store_true",
         help="Start an interactive query loop.",
@@ -101,7 +119,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.query:
-        print_result(args.query)
+        print_result(args.query, retrieve_only=args.retrieve_only)
     else:
         interactive_loop()
 
