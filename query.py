@@ -2,9 +2,9 @@ import argparse
 from typing import Iterable, List
 
 from dotenv import load_dotenv
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import Document
 from langchain_chroma import Chroma
+from langchain_core.documents import Document
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
 from config import (

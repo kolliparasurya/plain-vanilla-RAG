@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Iterable, List
 
 from dotenv import load_dotenv
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from config import CHAT_MODEL
